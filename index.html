@@ -9,6 +9,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- Configure NymAI Extension ID -->
+    <!-- For production, replace with your actual Chrome extension ID -->
+    <!-- You can find it in chrome://extensions (Developer mode) or from your extension's manifest -->
+    <script>
+      // Set your extension ID here (or via environment variable in production)
+      // Example: window.NYMAI_EXTENSION_ID = 'abcdefghijklmnopqrstuvwxyz123456';
+      // For development, this can be left null and set manually in browser console
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -43,6 +52,6 @@
 </head>
   <body class="bg-brand-dark">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
