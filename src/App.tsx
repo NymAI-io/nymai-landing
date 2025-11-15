@@ -174,18 +174,24 @@ const App: React.FC = () => {
             }
 
             // Send session to extension
+            console.log('onAuthStateChange: SIGNED_IN event detected');
+            console.log('onAuthStateChange: Extension ID:', extensionId);
+            console.log('onAuthStateChange: Session:', session);
             try {
               await sendSessionToExtension(extensionId, session);
+              console.log('onAuthStateChange: Session sent successfully');
               setAuthStatus('success');
               // Close the tab automatically after successful authentication
               // Small delay to ensure message is sent before closing
               setTimeout(() => {
+                console.log('onAuthStateChange: Closing window...');
                 window.close();
               }, 100);
-            } catch (error) {
-              console.error('Failed to send session to extension:', error);
+            } catch (error: any) {
+              console.error('onAuthStateChange: Failed to send session to extension:', error);
+              console.error('onAuthStateChange: Error message:', error?.message);
               setAuthStatus('error');
-              setErrorMessage('Failed to authenticate with extension. Please try again.');
+              setErrorMessage(`Failed to authenticate with extension: ${error?.message || 'Please try again.'}`);
               // Don't close on error - user needs to see the error message
             }
           }
@@ -293,6 +299,12 @@ const App: React.FC = () => {
           return;
         }
 
+        console.log('Attempting handshake...');
+        console.log('Retrieved Extension ID from sessionStorage:', extensionId);
+        console.log('Session object to be sent:', session);
+        console.log('Chrome runtime available:', typeof chrome !== 'undefined' && !!chrome.runtime);
+        console.log('Chrome runtime sendMessage available:', !!chrome.runtime.sendMessage);
+
         chrome.runtime.sendMessage(
           extensionId,
           {
@@ -301,8 +313,12 @@ const App: React.FC = () => {
           },
           (response) => {
             if (chrome.runtime.lastError) {
+              console.error('HANDSHAKE FAILED:', chrome.runtime.lastError.message);
+              console.error('Extension ID used:', extensionId);
+              console.error('Full error details:', chrome.runtime.lastError);
               reject(new Error(chrome.runtime.lastError.message));
             } else {
+              console.log('Handshake successful. Extension responded:', response);
               resolve();
             }
           }
@@ -311,22 +327,37 @@ const App: React.FC = () => {
     };
 
     const handleSession = async (session: any) => {
+      console.log('handleSession called with session:', session);
       setAuthStatus('processing');
+      
+      // Check sessionStorage first for saved extension ID
+      const savedExtensionId = sessionStorage.getItem('nymAI_dev_extension_id');
+      console.log('Saved extension ID from sessionStorage:', savedExtensionId);
+      
       const extensionId = await checkExtensionExists();
+      console.log('Extension ID from checkExtensionExists:', extensionId);
+      
       if (extensionId) {
         try {
+          console.log('About to send session to extension. Extension ID:', extensionId);
           await sendSessionToExtension(extensionId, session);
+          console.log('Session sent successfully, setting success status');
           setAuthStatus('success');
           // Close the tab automatically after successful authentication
           setTimeout(() => {
+            console.log('Closing window...');
             window.close();
           }, 100);
-        } catch (error) {
+        } catch (error: any) {
+          console.error('Failed to send session to extension:', error);
+          console.error('Error message:', error?.message);
+          console.error('Error stack:', error?.stack);
           setAuthStatus('error');
-          setErrorMessage('Failed to send session to extension.');
+          setErrorMessage(`Failed to send session to extension: ${error?.message || 'Unknown error'}`);
           // Don't close on error - user needs to see the error message
         }
       } else {
+        console.error('No extension ID found. Saved ID:', savedExtensionId);
         setAuthStatus('error');
         setErrorMessage('NymAI extension not found. Please ensure it is installed and enabled.');
         // Don't close on error - user needs to see the error message
