@@ -15,7 +15,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Extension ID - This should be set to your actual Chrome extension ID
 // For development, you can find it in chrome://extensions (Developer mode)
 // For production, this should be configured via environment variable or build config
-const EXTENSION_ID = (window as any).NYMAI_EXTENSION_ID || null;
+// NOTE: We check this dynamically each time, not at module load, so it can be set in console
+function getExtensionId(): string | null {
+  return (window as any).NYMAI_EXTENSION_ID || null;
+}
 
 // Initialize Supabase client (using CDN import)
 declare global {
@@ -121,8 +124,9 @@ const App: React.FC = () => {
           return;
         }
 
-        // Use configured extension ID
-        if (!EXTENSION_ID) {
+        // Use configured extension ID (check dynamically each time)
+        const extensionId = getExtensionId();
+        if (!extensionId) {
           console.warn('NymAI extension ID not configured. Please set window.NYMAI_EXTENSION_ID');
           // For development, you can set it in browser console: window.NYMAI_EXTENSION_ID = 'your-extension-id';
           resolve(null);
@@ -131,7 +135,7 @@ const App: React.FC = () => {
 
         // Try to ping the extension to verify it exists and is listening
         chrome.runtime.sendMessage(
-          EXTENSION_ID,
+          extensionId,
           { type: 'PING' },
           (response) => {
             if (chrome.runtime.lastError) {
@@ -139,7 +143,7 @@ const App: React.FC = () => {
               console.warn('NymAI: Extension not found or not responding:', chrome.runtime.lastError.message);
               resolve(null);
             } else {
-              resolve(EXTENSION_ID);
+              resolve(extensionId);
             }
           }
         );
