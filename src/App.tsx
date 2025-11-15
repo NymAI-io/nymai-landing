@@ -30,8 +30,21 @@ declare global {
 const App: React.FC = () => {
   const [authStatus, setAuthStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isOAuthRedirect, setIsOAuthRedirect] = useState<boolean>(false);
+
+  // Check if this is an OAuth redirect (has hash with auth tokens) vs a direct visit
+  useEffect(() => {
+    // Check URL hash for OAuth redirect indicators
+    const hash = window.location.hash;
+    const hasAuthHash = hash.includes('access_token') || hash.includes('code=') || hash.includes('error=');
+    setIsOAuthRedirect(hasAuthHash);
+  }, []);
 
   useEffect(() => {
+    // Only run auth logic if this is an OAuth redirect
+    if (!isOAuthRedirect) {
+      return;
+    }
     // Wait for Supabase to be available (loaded from CDN in index.html)
     const initAuth = async () => {
       // Wait for Supabase to be available (it's loaded in index.html)
@@ -94,10 +107,16 @@ const App: React.FC = () => {
             try {
               await sendSessionToExtension(extensionId, session);
               setAuthStatus('success');
+              // Close the tab automatically after successful authentication
+              // Small delay to ensure message is sent before closing
+              setTimeout(() => {
+                window.close();
+              }, 100);
             } catch (error) {
               console.error('Failed to send session to extension:', error);
               setAuthStatus('error');
               setErrorMessage('Failed to authenticate with extension. Please try again.');
+              // Don't close on error - user needs to see the error message
             }
           }
         });
@@ -181,32 +200,38 @@ const App: React.FC = () => {
         try {
           await sendSessionToExtension(extensionId, session);
           setAuthStatus('success');
+          // Close the tab automatically after successful authentication
+          setTimeout(() => {
+            window.close();
+          }, 100);
         } catch (error) {
           setAuthStatus('error');
           setErrorMessage('Failed to send session to extension.');
+          // Don't close on error - user needs to see the error message
         }
       } else {
         setAuthStatus('error');
-        setErrorMessage('NymAI extension not found.');
+        setErrorMessage('NymAI extension not found. Please ensure it is installed and enabled.');
+        // Don't close on error - user needs to see the error message
       }
     };
 
     initAuth();
-  }, []);
+  }, [isOAuthRedirect]);
 
-  // Show auth status UI if processing or success
+  // Show minimal success UI (tab will close automatically)
   if (authStatus === 'success') {
     return (
       <div className="min-h-screen bg-brand-dark text-gray-300 font-sans flex items-center justify-center p-8">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 bg-brand-teal/20 rounded-full flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 bg-brand-teal/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
             <svg className="w-8 h-8 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white">Authentication Successful!</h1>
+          <h1 className="text-2xl font-bold text-white">Authentication Successful!</h1>
           <p className="text-lg text-gray-400">
-            You are now logged in. You can close this tab and continue using the NymAI extension.
+            Closing this window...
           </p>
         </div>
       </div>
@@ -224,11 +249,40 @@ const App: React.FC = () => {
           </div>
           <h1 className="text-3xl font-bold text-white">Authentication Error</h1>
           <p className="text-lg text-gray-400">{errorMessage || 'An error occurred during authentication.'}</p>
+          <div className="pt-4 space-y-2 text-sm text-gray-500">
+            <p>Please ensure:</p>
+            <ul className="list-disc list-inside space-y-1 text-left">
+              <li>The NymAI extension is installed</li>
+              <li>The extension is enabled in chrome://extensions</li>
+              <li>You have refreshed the extension after installation</li>
+            </ul>
+          </div>
         </div>
       </div>
     );
   }
 
+  // If this is an OAuth redirect, show headless auth UI
+  if (isOAuthRedirect) {
+    // Default loading/authenticating state for OAuth redirects
+    return (
+      <div className="min-h-screen bg-brand-dark text-gray-300 font-sans flex items-center justify-center p-8">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="w-16 h-16 bg-brand-teal/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
+            <svg className="w-8 h-8 text-brand-teal animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white">Authenticating...</h1>
+          <p className="text-lg text-gray-400">
+            Please wait while we complete your authentication.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If this is a direct visit, show the full landing page
   return (
     <div className="bg-brand-dark text-gray-300 font-sans antialiased overflow-x-hidden">
        <div className="absolute top-0 left-0 w-full h-full z-0">
