@@ -21,13 +21,13 @@ const Pricing: React.FC = () => {
         <div className="bg-brand-glass p-1.5 rounded-xl flex items-center space-x-2">
           <button 
             onClick={() => setIsPro(false)}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${!isPro ? 'bg-brand-purple text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${!isPro ? 'bg-brand-teal text-brand-dark' : 'text-gray-400 hover:text-white'}`}
           >
             Free
           </button>
           <button 
             onClick={() => setIsPro(true)}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${isPro ? 'bg-brand-purple text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${isPro ? 'bg-brand-teal text-brand-dark' : 'text-gray-400 hover:text-white'}`}
           >
             Pro
           </button>
@@ -36,7 +36,7 @@ const Pricing: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {/* Free Plan */}
-        <div className={`p-8 rounded-2xl transition-all duration-300 ${!isPro ? 'border-2 border-brand-purple bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
+        <div className={`p-8 rounded-2xl transition-all duration-300 ${!isPro ? 'border-2 border-brand-teal bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
           <h3 className="text-2xl font-bold text-white">Explorer</h3>
           <p className="text-gray-400 mb-6">For casual, everyday use.</p>
           <p className="text-4xl font-extrabold text-white mb-6">Free</p>
@@ -48,7 +48,7 @@ const Pricing: React.FC = () => {
         </div>
         
         {/* Pro Plan */}
-        <div className={`p-8 rounded-2xl transition-all duration-300 ${isPro ? 'border-2 border-brand-purple bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
+        <div className={`p-8 rounded-2xl transition-all duration-300 ${isPro ? 'border-2 border-brand-teal bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
           <h3 className="text-2xl font-bold text-white">Professional</h3>
           <p className="text-gray-400 mb-6">For those who require absolute certainty.</p>
           <p className="text-4xl font-extrabold text-white mb-1">$9<span className="text-lg font-medium text-gray-400">/month</span></p>

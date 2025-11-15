@@ -14,7 +14,7 @@ const FinalCTA: React.FC = () => {
         </p>
         <a
           href="#"
-          className="bg-gradient-to-r from-brand-purple to-brand-blue text-white font-bold py-4 px-8 rounded-xl text-lg inline-flex items-center gap-3 hover:opacity-90 transition-opacity shadow-lg shadow-brand-purple/20"
+          className="bg-brand-teal text-brand-dark font-bold py-4 px-8 rounded-xl text-lg inline-flex items-center gap-3 hover:bg-brand-teal-light transition-colors shadow-lg shadow-brand-teal/20"
         >
           <ChromeIcon className="w-6 h-6" />
           Download for Chrome

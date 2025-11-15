@@ -6,15 +6,23 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NymAI - The Internet's Trust Layer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
-              'brand-purple': '#8A3FFC',
-              'brand-blue': '#3392FF',
-              'brand-dark': '#0D0C1D',
+              'brand-dark': '#2d3748',
+              'brand-teal': '#4fd1c5',
+              'brand-teal-light': '#81e6d9',
+              'background': '#f7fafc',
+              'neutral-text': '#a0aec0',
               'brand-glass': 'rgba(255, 255, 255, 0.05)',
               'brand-glass-border': 'rgba(255, 255, 255, 0.1)',
             },
