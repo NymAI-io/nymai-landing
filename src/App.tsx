@@ -1,12 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import HowItWorks from './components/HowItWorks';
-import Pricing from './components/Pricing';
-import FinalCTA from './components/FinalCTA';
-import Footer from './components/Footer';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
 
 // Supabase configuration (same as extension)
 const SUPABASE_URL = 'https://rpnprnyoylifxxstdxzg.supabase.co';
@@ -27,7 +23,8 @@ declare global {
   }
 }
 
-const App: React.FC = () => {
+// OAuth Redirect Handler Component (handles OAuth callbacks)
+const OAuthHandler: React.FC = () => {
   const [authStatus, setAuthStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isOAuthRedirect, setIsOAuthRedirect] = useState<boolean>(false);
@@ -410,9 +407,13 @@ const App: React.FC = () => {
     );
   }
 
-  // If this is an OAuth redirect, show headless auth UI
-  if (isOAuthRedirect) {
-    // Default loading/authenticating state for OAuth redirects
+  // Only render UI if this is an OAuth redirect
+  if (!isOAuthRedirect) {
+    return null;
+  }
+
+  // Show loading/authenticating state for OAuth redirects
+  if (authStatus === 'processing' || authStatus === 'idle') {
     return (
       <div className="min-h-screen bg-brand-dark text-gray-300 font-sans flex items-center justify-center p-8">
         <div className="max-w-md w-full text-center space-y-6">
@@ -430,25 +431,20 @@ const App: React.FC = () => {
     );
   }
 
-  // If this is a direct visit, show the full landing page
+  // Success and error states are already handled above
+  return null;
+};
+
+// Main App Component with Routing
+const App: React.FC = () => {
   return (
-    <div className="bg-brand-dark text-gray-300 font-sans antialiased overflow-x-hidden">
-       <div className="absolute top-0 left-0 w-full h-full z-0">
-        <div className="absolute top-[-20rem] left-[-20rem] w-[50rem] h-[50rem] bg-brand-teal/10 rounded-full filter blur-3xl opacity-50 animate-pulse"></div>
-        <div className="absolute bottom-[-20rem] right-[-20rem] w-[50rem] h-[50rem] bg-brand-teal-light/10 rounded-full filter blur-3xl opacity-50 animate-pulse animation-delay-4000"></div>
-      </div>
-      <div className="relative z-10">
-        <Header />
-        <main>
-          <Hero />
-          <Features />
-          <HowItWorks />
-          <Pricing />
-          <FinalCTA />
-        </main>
-        <Footer />
-      </div>
-    </div>
+    <BrowserRouter>
+      <OAuthHandler />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
