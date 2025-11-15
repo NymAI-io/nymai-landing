@@ -32,12 +32,82 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isOAuthRedirect, setIsOAuthRedirect] = useState<boolean>(false);
 
-  // Check if this is an OAuth redirect (has hash with auth tokens) vs a direct visit
+  // Main effect: Handle OAuth orchestration on page load
   useEffect(() => {
-    // Check URL hash for OAuth redirect indicators
+    // Parse URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const authProvider = urlParams.get('auth_provider');
+    const devExtensionId = urlParams.get('dev_extension_id');
+    
+    // Check URL hash for OAuth redirect indicators (returning from Google)
     const hash = window.location.hash;
     const hasAuthHash = hash.includes('access_token') || hash.includes('code=') || hash.includes('error=');
-    setIsOAuthRedirect(hasAuthHash);
+    
+    // Case 1: User is starting the OAuth flow (has auth_provider=google query param)
+    if (authProvider === 'google' && devExtensionId) {
+      console.log('NymAI: OAuth flow initiated, saving extension ID:', devExtensionId);
+      
+      // Save the extension ID to sessionStorage (persists across redirects)
+      sessionStorage.setItem('nymAI_dev_extension_id', devExtensionId);
+      
+      // Mark as OAuth redirect so the auth logic will run
+      setIsOAuthRedirect(true);
+      
+      // Initiate Google OAuth immediately
+      // Wait for Supabase to be available, then redirect to Google
+      const waitForSupabase = (): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          if ((window as any).supabase && (window as any).supabase.createClient) {
+            resolve();
+            return;
+          }
+          
+          // Wait up to 5 seconds for Supabase to load
+          let attempts = 0;
+          const checkInterval = setInterval(() => {
+            attempts++;
+            if ((window as any).supabase && (window as any).supabase.createClient) {
+              clearInterval(checkInterval);
+              resolve();
+            } else if (attempts > 50) { // 5 seconds max
+              clearInterval(checkInterval);
+              reject(new Error('Supabase library failed to load'));
+            }
+          }, 100);
+        });
+      };
+
+      waitForSupabase().then(() => {
+        const supabaseLib = (window as any).supabase;
+        const { createClient } = supabaseLib;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        console.log('NymAI: Initiating Google OAuth redirect...');
+        // Initiate OAuth - this will redirect to Google
+        supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: 'https://www.nymai.io'
+          }
+        });
+      }).catch((error) => {
+        console.error('NymAI: Failed to load Supabase:', error);
+        setAuthStatus('error');
+        setErrorMessage('Failed to load authentication library. Please refresh the page.');
+      });
+      
+      return; // Exit early - OAuth redirect will happen
+    }
+    
+    // Case 2: User is returning from Google OAuth (has auth hash)
+    if (hasAuthHash) {
+      console.log('NymAI: Returning from OAuth, checking for saved extension ID...');
+      setIsOAuthRedirect(true);
+      return; // The existing auth logic will handle this
+    }
+    
+    // Case 3: Normal visitor (no OAuth params, no auth hash)
+    setIsOAuthRedirect(false);
   }, []);
 
   useEffect(() => {
@@ -143,29 +213,76 @@ const App: React.FC = () => {
           return;
         }
 
-        // Use configured extension ID (check dynamically each time)
-        const extensionId = getExtensionId();
-        if (!extensionId) {
-          console.warn('NymAI extension ID not configured. Please set window.NYMAI_EXTENSION_ID');
-          // For development, you can set it in browser console: window.NYMAI_EXTENSION_ID = 'your-extension-id';
-          resolve(null);
-          return;
-        }
+        // Fallback function: Check for injected extension ID (from content script)
+        const checkInjectedExtensionId = () => {
+          let attempts = 0;
+          const maxAttempts = 10; // Try for up to 1 second (10 * 100ms)
+          const checkInterval = 100; // Check every 100ms
 
-        // Try to ping the extension to verify it exists and is listening
-        chrome.runtime.sendMessage(
-          extensionId,
-          { type: 'PING' },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              // Extension might not be installed, not responding, or ID is incorrect
-              console.warn('NymAI: Extension not found or not responding:', chrome.runtime.lastError.message);
-              resolve(null);
+          const checkForExtensionId = () => {
+            attempts++;
+            const extensionId = getExtensionId();
+            
+            if (extensionId) {
+              // Found extension ID, verify it works by pinging the extension
+              chrome.runtime.sendMessage(
+                extensionId,
+                { type: 'PING' },
+                (response) => {
+                  if (chrome.runtime.lastError) {
+                    // Extension might not be installed, not responding, or ID is incorrect
+                    console.warn('NymAI: Extension not found or not responding:', chrome.runtime.lastError.message);
+                    if (attempts < maxAttempts) {
+                      // Retry ping
+                      setTimeout(checkForExtensionId, checkInterval);
+                    } else {
+                      resolve(null);
+                    }
+                  } else {
+                    console.log('NymAI: Extension verified and ready:', extensionId);
+                    resolve(extensionId);
+                  }
+                }
+              );
             } else {
-              resolve(extensionId);
+              // Extension ID not yet injected, retry if we haven't exceeded max attempts
+              if (attempts < maxAttempts) {
+                setTimeout(checkForExtensionId, checkInterval);
+              } else {
+                console.warn('NymAI: Extension ID not found after retries. Content script may not be loaded.');
+                resolve(null);
+              }
             }
-          }
-        );
+          };
+
+          // Start checking immediately
+          checkForExtensionId();
+        };
+
+        // CRITICAL: First check sessionStorage for saved extension ID (from OAuth initiation)
+        // This ensures we use the correct extension ID even after Google redirect
+        const savedExtensionId = sessionStorage.getItem('nymAI_dev_extension_id');
+        if (savedExtensionId) {
+          console.log('NymAI: Using saved extension ID from sessionStorage:', savedExtensionId);
+          // Verify it works by pinging the extension
+          chrome.runtime.sendMessage(
+            savedExtensionId,
+            { type: 'PING' },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.warn('NymAI: Saved extension ID not responding, trying injected ID:', chrome.runtime.lastError.message);
+                // Fall through to check injected ID
+                checkInjectedExtensionId();
+              } else {
+                console.log('NymAI: Saved extension ID verified and ready:', savedExtensionId);
+                resolve(savedExtensionId);
+              }
+            }
+          );
+        } else {
+          // No saved ID, check for injected extension ID
+          checkInjectedExtensionId();
+        }
       });
     };
 
