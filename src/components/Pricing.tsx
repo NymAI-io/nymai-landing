@@ -50,16 +50,19 @@ const Pricing: React.FC = () => {
         {/* Pro Plan */}
         <div className={`p-8 rounded-2xl transition-all duration-300 ${isPro ? 'border-2 border-brand-teal bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
           <h3 className="text-2xl font-bold text-white">Professional</h3>
-          <p className="text-gray-400 mb-6">For those who require absolute certainty.</p>
-          <p className="text-4xl font-extrabold text-white mb-1">$9<span className="text-lg font-medium text-gray-400">/month</span></p>
-          <p className="text-gray-400 mb-6">Billed annually</p>
-          <ul className="space-y-4 text-gray-300">
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Unlimited analyses</li>
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Advanced AI detection</li>
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Text, Image & Video analysis</li>
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Full Source Verification</li>
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Priority support</li>
+          <p className="text-gray-400 mb-6">Join the waitlist for exclusive early access.</p>
+          <p className="text-4xl font-extrabold text-white mb-1">$9.99<span className="text-lg font-medium text-gray-400">/month</span></p>
+          <p className="text-gray-400 mb-6">Coming Soon</p>
+          <ul className="space-y-4 text-gray-300 mb-6">
+            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Priority Access to NymAI Pro: Be the first to get the full feature set when it launches.</li>
+            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Exclusive Launch Discount: Lock in a special discount for being an early supporter.</li>
+            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Help Shape the Roadmap: Get a say in what new features we build next.</li>
           </ul>
+          <button
+            onClick={() => window.open('https://tally.so/r/444K1d', '_blank')}
+            className="w-full py-3 bg-brand-teal hover:bg-brand-teal/90 text-brand-dark font-semibold rounded-lg transition-colors shadow-lg">
+            Join the Pro Waitlist
+          </button>
         </div>
       </div>
     </section>
