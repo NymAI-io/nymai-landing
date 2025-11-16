@@ -176,7 +176,7 @@ function LoginForm({ onError }: LoginFormProps) {
   if (!supabase) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-gray-400">Loading authentication...</div>
+        <div className="text-gray-600">Loading authentication...</div>
       </div>
     );
   }
@@ -189,7 +189,7 @@ function LoginForm({ onError }: LoginFormProps) {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-teal"
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent"
           required
           disabled={loading}
         />
@@ -198,25 +198,25 @@ function LoginForm({ onError }: LoginFormProps) {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-teal"
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent"
           required
           disabled={loading}
         />
 
-        {message && <p className="text-green-400 text-sm">{message}</p>}
+        {message && <p className="text-green-600 text-sm">{message}</p>}
 
         <div className="flex space-x-3">
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 py-3 bg-brand-teal hover:bg-brand-tealLight text-brand-dark font-semibold rounded-lg transition-colors disabled:bg-gray-500 disabled:text-white">
+            className="flex-1 py-2.5 bg-brand-teal hover:bg-brand-teal/90 text-brand-dark font-semibold rounded-lg transition-colors shadow-lg disabled:bg-gray-300 disabled:text-gray-500">
             {loading ? "Loading..." : isLogin ? "Log In" : "Sign Up"}
           </button>
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
             disabled={loading}
-            className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors disabled:bg-gray-500">
+            className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-lg transition-colors disabled:bg-gray-100 disabled:text-gray-400">
             {isLogin ? "Sign Up" : "Log In"}
           </button>
         </div>
@@ -224,10 +224,10 @@ function LoginForm({ onError }: LoginFormProps) {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-600" />
+          <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-brand-dark text-gray-400">Or continue with</span>
+          <span className="px-2 bg-white text-gray-500">Or continue with</span>
         </div>
       </div>
 
@@ -235,7 +235,7 @@ function LoginForm({ onError }: LoginFormProps) {
         type="button"
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center disabled:bg-gray-500">
+        className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors flex items-center justify-center disabled:bg-gray-100 disabled:text-gray-400">
         {loading ? "Loading..." : "Sign in with Google"}
       </button>
     </div>

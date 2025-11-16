@@ -16,34 +16,24 @@ const LoginPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo and Branding */}
         <div className="flex items-center justify-center space-x-3 mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-brand-teal to-brand-tealLight rounded-lg flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="6" fill="url(#gradient)"/>
-              <defs>
-                <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#4fd1c5"/>
-                  <stop offset="100%" stopColor="#81e6d9"/>
-                </linearGradient>
-              </defs>
-              <path d="M8 10 L8 22 M8 10 L20 22 M20 10 L20 22" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            </svg>
-          </div>
-          <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-brand-tealLight">
-            NymAI
-          </h1>
+          <img 
+            src="/NymAI_full_logo.svg" 
+            alt="NymAI Logo" 
+            className="h-12"
+          />
         </div>
 
         {/* Login Card */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-2xl font-bold text-white mb-2 text-center">Welcome Back</h2>
-          <p className="text-gray-400 text-center mb-6">Sign in to your NymAI account</p>
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-lg">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Welcome Back</h2>
+          <p className="text-gray-600 text-center mb-6">Sign in to your NymAI account</p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-sm text-red-300">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
               {error}
             </div>
           )}
@@ -55,7 +45,7 @@ const LoginPage: React.FC = () => {
         <div className="mt-6 text-center">
           <a 
             href="/" 
-            className="text-gray-400 hover:text-gray-300 text-sm transition-colors underline"
+            className="text-gray-500 hover:text-gray-700 text-sm transition-colors underline"
           >
             ← Back to Home
           </a>
