@@ -12,7 +12,7 @@ const Hero: React.FC = () => {
         The Internet's <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-brand-teal-light">Trust Layer.</span>
       </h1>
       <p className="max-w-3xl mx-auto text-lg md:text-xl text-gray-400 mb-10">
-        In a world of AI-generated content, NymAI is your ground truth. Instantly verify the authenticity and credibility of any text, image, or video.
+        In a world of AI-generated content and misinformation, NymAI is your ground truth. Instantly verify the authenticity and credibility of any text, image, or video.
       </p>
       <div className="flex justify-center mb-12">
         <a
