@@ -10,7 +10,7 @@ import Footer from '../components/Footer';
 
 const HomePage: React.FC = () => {
   return (
-    <div className="bg-white text-gray-900 font-sans antialiased overflow-x-hidden">
+    <div className="bg-gray-50 text-gray-900 font-sans antialiased overflow-x-hidden">
       <div className="relative z-10">
         <Header />
         <main>
