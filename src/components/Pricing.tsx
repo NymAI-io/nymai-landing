@@ -13,21 +13,21 @@ const Pricing: React.FC = () => {
   return (
     <section id="pricing" className="py-20 sm:py-28 container mx-auto px-4">
       <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-white">Choose Your Plan</h2>
-        <p className="max-w-2xl mx-auto mt-4 text-lg text-gray-400">Start for free or unlock the full power of NymAI for professional use.</p>
+        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-gray-900">Choose Your Plan</h2>
+        <p className="max-w-2xl mx-auto mt-4 text-lg text-gray-600">Start for free or unlock the full power of NymAI for professional use.</p>
       </div>
 
       <div className="flex justify-center mb-12">
-        <div className="bg-brand-glass p-1.5 rounded-xl flex items-center space-x-2">
+        <div className="bg-gray-100 p-1.5 rounded-xl flex items-center space-x-2">
           <button 
             onClick={() => setIsPro(false)}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${!isPro ? 'bg-brand-teal text-brand-dark' : 'text-gray-400 hover:text-white'}`}
+            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${!isPro ? 'bg-brand-teal text-brand-dark' : 'text-gray-600 hover:text-gray-900'}`}
           >
             Free
           </button>
           <button 
             onClick={() => setIsPro(true)}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${isPro ? 'bg-brand-teal text-brand-dark' : 'text-gray-400 hover:text-white'}`}
+            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-colors ${isPro ? 'bg-brand-teal text-brand-dark' : 'text-gray-600 hover:text-gray-900'}`}
           >
             Pro
           </button>
@@ -36,11 +36,11 @@ const Pricing: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {/* Free Plan */}
-        <div className={`p-8 rounded-2xl transition-all duration-300 ${!isPro ? 'border-2 border-brand-teal bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
-          <h3 className="text-2xl font-bold text-white">Explorer</h3>
-          <p className="text-gray-400 mb-6">For casual, everyday use.</p>
-          <p className="text-4xl font-extrabold text-white mb-6">Free</p>
-          <ul className="space-y-4 text-gray-300">
+        <div className={`p-8 rounded-2xl transition-all duration-300 ${!isPro ? 'border-2 border-brand-teal bg-white shadow-lg' : 'bg-white border border-gray-200 shadow-sm'}`}>
+          <h3 className="text-2xl font-bold text-gray-900">Explorer</h3>
+          <p className="text-gray-600 mb-6">For casual, everyday use.</p>
+          <p className="text-4xl font-extrabold text-gray-900 mb-6">Free</p>
+          <ul className="space-y-4 text-gray-700">
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> 10 analyses per day</li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Basic AI detection</li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Text & Image analysis</li>
@@ -48,12 +48,12 @@ const Pricing: React.FC = () => {
         </div>
         
         {/* Pro Plan */}
-        <div className={`p-8 rounded-2xl transition-all duration-300 ${isPro ? 'border-2 border-brand-teal bg-brand-glass' : 'bg-brand-glass border border-brand-glass-border'}`}>
-          <h3 className="text-2xl font-bold text-white">Professional</h3>
-          <p className="text-gray-400 mb-6">Join the waitlist for exclusive early access.</p>
-          <p className="text-4xl font-extrabold text-white mb-1">$9.99<span className="text-lg font-medium text-gray-400">/month</span></p>
-          <p className="text-gray-400 mb-6">Coming Soon</p>
-          <ul className="space-y-4 text-gray-300 mb-6">
+        <div className={`p-8 rounded-2xl transition-all duration-300 ${isPro ? 'border-2 border-brand-teal bg-white shadow-lg' : 'bg-white border border-gray-200 shadow-sm'}`}>
+          <h3 className="text-2xl font-bold text-gray-900">Professional</h3>
+          <p className="text-gray-600 mb-6">Join the waitlist for exclusive early access.</p>
+          <p className="text-4xl font-extrabold text-gray-900 mb-1">$9.99<span className="text-lg font-medium text-gray-500">/month</span></p>
+          <p className="text-gray-600 mb-6">Coming Soon</p>
+          <ul className="space-y-4 text-gray-700 mb-6">
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Priority Access to NymAI Pro: Be the first to get the full feature set when it launches.</li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Exclusive Launch Discount: Lock in a special discount for being an early supporter.</li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Help Shape the Roadmap: Get a say in what new features we build next.</li>

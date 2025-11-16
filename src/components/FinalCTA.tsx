@@ -6,10 +6,10 @@ const FinalCTA: React.FC = () => {
   return (
     <section className="py-20 sm:py-28 container mx-auto px-4 text-center">
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-white mb-6">
+        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-gray-900 mb-6">
           Build a More Trustworthy Internet.
         </h2>
-        <p className="text-lg md:text-xl text-gray-400 mb-10">
+        <p className="text-lg md:text-xl text-gray-600 mb-10">
           Join us in our mission to bring clarity and truth back to the web. Install NymAI and start navigating the digital world with renewed confidence today.
         </p>
         <a
