@@ -26,7 +26,7 @@ const HowItWorks: React.FC = () => {
          <div className="hidden md:block absolute top-8 left-[10%] right-[24%] h-0.5 bg-gradient-to-r from-brand-teal to-brand-teal-light"></div>
 
         <Step icon={<MousePointerIcon className="w-8 h-8 text-brand-teal"/>} title="Select" stepNumber={1}>
-          Activate our intuitive selection mode. Simply highlight any text, image, or video element on the page you want to analyze.
+          Activate our intuitive selection mode. Simply highlight any text, image, or video element on the page you want to analyze. Or paste any YouTube URL to instantly verify the video's transcript.
         </Step>
         
         <Step icon={<CpuChipIcon className="w-8 h-8 text-brand-teal"/>} title="Analyze" stepNumber={2}>

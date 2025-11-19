@@ -43,7 +43,7 @@ const Pricing: React.FC = () => {
           <ul className="space-y-4 text-gray-700">
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> 10 analyses per day</li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Basic AI detection</li>
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Text & Image analysis</li>
+            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Text, Image & <strong>Video</strong> analysis</li>
           </ul>
         </div>
         
