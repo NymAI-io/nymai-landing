@@ -3,10 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import { isValidExtensionId, sanitizeExtensionId, saveExtensionIdToStorage, clearExtensionIdFromStorage, getExtensionIdFromStorage } from './utils/extensionId';
 
-// Supabase configuration (same as extension)
-const SUPABASE_URL = 'https://rpnprnyoylifxxstdxzg.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_BB5Hs1o7Za_hR00TC23GxA__bFgMKqO';
+// Supabase configuration - Uses environment variables with fallback defaults
+// SECURITY: Supabase anon keys are designed to be public (protected by RLS)
+// Using environment variables allows for easier configuration across environments
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rpnprnyoylifxxstdxzg.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_BB5Hs1o7Za_hR00TC23GxA__bFgMKqO';
 
 // Extension ID - This should be set to your actual Chrome extension ID
 // For development, you can find it in chrome://extensions (Developer mode)
@@ -42,10 +45,19 @@ const OAuthHandler: React.FC = () => {
     
     // Case 1: User is starting the OAuth flow (has auth_provider=google query param)
     if (authProvider === 'google' && devExtensionId) {
-      console.log('NymAI: OAuth flow initiated, saving extension ID:', devExtensionId);
+      // SECURITY FIX: Validate and sanitize extension ID before saving
+      const sanitizedId = sanitizeExtensionId(devExtensionId);
+      if (!sanitizedId || !isValidExtensionId(sanitizedId)) {
+        console.error('NymAI: Invalid extension ID format:', devExtensionId);
+        setAuthStatus('error');
+        setErrorMessage('Invalid extension ID format. Please ensure the extension is properly installed.');
+        return;
+      }
       
-      // Save the extension ID to sessionStorage (persists across redirects)
-      sessionStorage.setItem('nymAI_dev_extension_id', devExtensionId);
+      console.log('NymAI: OAuth flow initiated, saving extension ID:', sanitizedId);
+      
+      // Save the validated extension ID to sessionStorage (persists across redirects)
+      saveExtensionIdToStorage(sanitizedId);
       
       // Mark as OAuth redirect so the auth logic will run
       setIsOAuthRedirect(true);
@@ -173,10 +185,13 @@ const OAuthHandler: React.FC = () => {
             // Send session to extension
             console.log('onAuthStateChange: SIGNED_IN event detected');
             console.log('onAuthStateChange: Extension ID:', extensionId);
-            console.log('onAuthStateChange: Session:', session);
+            // SECURITY FIX: Don't log full session object (contains tokens)
+            console.log('onAuthStateChange: Session received (tokens not logged for security)');
             try {
               await sendSessionToExtension(extensionId, session);
               console.log('onAuthStateChange: Session sent successfully');
+              // SECURITY FIX: Clear extension ID from sessionStorage after successful use
+              clearExtensionIdFromStorage();
               setAuthStatus('success');
               // Close the tab automatically after successful authentication
               // Small delay to ensure message is sent before closing
@@ -185,10 +200,12 @@ const OAuthHandler: React.FC = () => {
                 window.close();
               }, 100);
             } catch (error: any) {
-              console.error('onAuthStateChange: Failed to send session to extension:', error);
-              console.error('onAuthStateChange: Error message:', error?.message);
+              // SECURITY FIX: Don't log full error object (might contain session data)
+              console.error('onAuthStateChange: Failed to send session to extension');
+              const errorMessage = error?.message || 'Please try again.';
+              console.error('onAuthStateChange: Error message:', errorMessage);
               setAuthStatus('error');
-              setErrorMessage(`Failed to authenticate with extension: ${error?.message || 'Please try again.'}`);
+              setErrorMessage(`Failed to authenticate with extension: ${errorMessage}`);
               // Don't close on error - user needs to see the error message
             }
           }
@@ -264,20 +281,22 @@ const OAuthHandler: React.FC = () => {
 
         // CRITICAL: First check sessionStorage for saved extension ID (from OAuth initiation)
         // This ensures we use the correct extension ID even after Google redirect
-        const savedExtensionId = sessionStorage.getItem('nymAI_dev_extension_id');
+        // SECURITY FIX: Use validated getter function
+        const savedExtensionId = getExtensionIdFromStorage();
         if (savedExtensionId) {
-          console.log('NymAI: Using saved extension ID from sessionStorage:', savedExtensionId);
+          console.log('NymAI: Using saved extension ID from sessionStorage');
           // Verify it works by pinging the extension
           chrome.runtime.sendMessage(
             savedExtensionId,
             { type: 'PING' },
             (response) => {
               if (chrome.runtime.lastError) {
-                console.warn('NymAI: Saved extension ID not responding, trying injected ID:', chrome.runtime.lastError.message);
+                // SECURITY FIX: Don't log full error message (might contain sensitive info)
+                console.warn('NymAI: Saved extension ID not responding, trying injected ID');
                 // Fall through to check injected ID
                 checkInjectedExtensionId();
               } else {
-                console.log('NymAI: Saved extension ID verified and ready:', savedExtensionId);
+                console.log('NymAI: Saved extension ID verified and ready');
                 resolve(savedExtensionId);
               }
             }
@@ -296,11 +315,16 @@ const OAuthHandler: React.FC = () => {
           return;
         }
 
+        // SECURITY FIX: Validate extension ID before sending
+        if (!isValidExtensionId(extensionId)) {
+          reject(new Error('Invalid extension ID format'));
+          return;
+        }
+
         console.log('Attempting handshake...');
-        console.log('Retrieved Extension ID from sessionStorage:', extensionId);
-        console.log('Session object to be sent:', session);
         console.log('Chrome runtime available:', typeof chrome !== 'undefined' && !!chrome.runtime);
-        console.log('Chrome runtime sendMessage available:', !!chrome.runtime.sendMessage);
+        // SECURITY FIX: Don't log extension ID or session object (contains sensitive data)
+        // SECURITY FIX: Don't log full session object (contains tokens)
 
         chrome.runtime.sendMessage(
           extensionId,
@@ -310,12 +334,12 @@ const OAuthHandler: React.FC = () => {
           },
           (response) => {
             if (chrome.runtime.lastError) {
-              console.error('HANDSHAKE FAILED:', chrome.runtime.lastError.message);
-              console.error('Extension ID used:', extensionId);
-              console.error('Full error details:', chrome.runtime.lastError);
-              reject(new Error(chrome.runtime.lastError.message));
+              // SECURITY FIX: Only log error message, not full error object
+              const errorMsg = chrome.runtime.lastError.message || 'Unknown error';
+              console.error('HANDSHAKE FAILED:', errorMsg);
+              reject(new Error(errorMsg));
             } else {
-              console.log('Handshake successful. Extension responded:', response);
+              console.log('Handshake successful. Extension responded');
               resolve();
             }
           }
@@ -324,20 +348,17 @@ const OAuthHandler: React.FC = () => {
     };
 
     const handleSession = async (session: any) => {
-      console.log('handleSession called with session:', session);
+      // SECURITY FIX: Don't log full session object (contains tokens)
+      console.log('handleSession called');
       setAuthStatus('processing');
       
-      // Check sessionStorage first for saved extension ID
-      const savedExtensionId = sessionStorage.getItem('nymAI_dev_extension_id');
-      console.log('Saved extension ID from sessionStorage:', savedExtensionId);
-      
       const extensionId = await checkExtensionExists();
-      console.log('Extension ID from checkExtensionExists:', extensionId);
       
       if (extensionId) {
         try {
-          console.log('About to send session to extension. Extension ID:', extensionId);
           await sendSessionToExtension(extensionId, session);
+          // SECURITY FIX: Clear extension ID from sessionStorage after successful use
+          clearExtensionIdFromStorage();
           console.log('Session sent successfully, setting success status');
           setAuthStatus('success');
           // Close the tab automatically after successful authentication
@@ -346,15 +367,15 @@ const OAuthHandler: React.FC = () => {
             window.close();
           }, 100);
         } catch (error: any) {
-          console.error('Failed to send session to extension:', error);
-          console.error('Error message:', error?.message);
-          console.error('Error stack:', error?.stack);
+          // SECURITY FIX: Only log error message, not full error object
+          const errorMessage = error?.message || 'Unknown error';
+          console.error('Failed to send session to extension:', errorMessage);
           setAuthStatus('error');
-          setErrorMessage(`Failed to send session to extension: ${error?.message || 'Unknown error'}`);
+          setErrorMessage(`Failed to send session to extension: ${errorMessage}`);
           // Don't close on error - user needs to see the error message
         }
       } else {
-        console.error('No extension ID found. Saved ID:', savedExtensionId);
+        console.error('No extension ID found');
         setAuthStatus('error');
         setErrorMessage('NymAI extension not found. Please ensure it is installed and enabled.');
         // Don't close on error - user needs to see the error message

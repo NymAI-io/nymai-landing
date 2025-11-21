@@ -10,9 +10,11 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
+      // SECURITY FIX: Removed Gemini API keys - not used in landing page
+      // API keys should only be used server-side (backend), never exposed in client bundles
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        // Removed: 'process.env.API_KEY' and 'process.env.GEMINI_API_KEY'
+        // These were not used in the landing page code and should not be exposed client-side
       },
       resolve: {
         alias: {

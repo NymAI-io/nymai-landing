@@ -1,9 +1,12 @@
 // src/components/LoginForm.tsx
 import React, { useState, useEffect } from "react"
+import { isValidExtensionId, sanitizeExtensionId, saveExtensionIdToStorage, clearExtensionIdFromStorage } from '../utils/extensionId';
 
-// Supabase configuration (same as App.tsx)
-const SUPABASE_URL = 'https://rpnprnyoylifxxstdxzg.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_BB5Hs1o7Za_hR00TC23GxA__bFgMKqO';
+// Supabase configuration - Uses environment variables with fallback defaults
+// SECURITY: Supabase anon keys are designed to be public (protected by RLS)
+// Using environment variables allows for easier configuration across environments
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rpnprnyoylifxxstdxzg.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_BB5Hs1o7Za_hR00TC23GxA__bFgMKqO';
 
 interface LoginFormProps {
   onError: (error: string) => void
@@ -54,12 +57,24 @@ function LoginForm({ onError }: LoginFormProps) {
 
   // Function to send session to extension and close tab (headless flow)
   const sendSessionToExtensionAndClose = async (session: any) => {
-    // Get extension ID from sessionStorage (saved during OAuth initiation) or from URL params
+    // Get extension ID from URL params or sessionStorage
     const urlParams = new URLSearchParams(window.location.search);
-    const devExtensionId = urlParams.get('dev_extension_id') || sessionStorage.getItem('nymAI_dev_extension_id');
+    const urlExtensionId = urlParams.get('dev_extension_id');
+    const storedExtensionId = sessionStorage.getItem('nymAI_dev_extension_id');
+    
+    // SECURITY FIX: Validate and sanitize extension ID
+    let devExtensionId: string | null = null;
+    if (urlExtensionId) {
+      devExtensionId = sanitizeExtensionId(urlExtensionId);
+      if (devExtensionId && isValidExtensionId(devExtensionId)) {
+        saveExtensionIdToStorage(devExtensionId);
+      }
+    } else if (storedExtensionId) {
+      devExtensionId = isValidExtensionId(storedExtensionId) ? storedExtensionId : null;
+    }
     
     if (!devExtensionId) {
-      console.warn('NymAI: No extension ID found. User may not have extension installed.');
+      console.warn('NymAI: No valid extension ID found. User may not have extension installed.');
       // Don't close tab if no extension - user might want to use the web version
       return;
     }
@@ -70,7 +85,8 @@ function LoginForm({ onError }: LoginFormProps) {
       return;
     }
 
-    console.log('NymAI: Sending session to extension:', devExtensionId);
+    // SECURITY FIX: Don't log extension ID or session object
+    console.log('NymAI: Sending session to extension');
     
     try {
       chrome.runtime.sendMessage(
@@ -81,10 +97,14 @@ function LoginForm({ onError }: LoginFormProps) {
         },
         (response) => {
           if (chrome.runtime.lastError) {
-            console.error('NymAI: Failed to send session to extension:', chrome.runtime.lastError.message);
-            onError(`Failed to authenticate with extension: ${chrome.runtime.lastError.message}`);
+            // SECURITY FIX: Only log error message, not full error object
+            const errorMsg = chrome.runtime.lastError.message || 'Unknown error';
+            console.error('NymAI: Failed to send session to extension:', errorMsg);
+            onError(`Failed to authenticate with extension: ${errorMsg}`);
           } else {
             console.log('NymAI: Session sent successfully to extension');
+            // SECURITY FIX: Clear extension ID from sessionStorage after successful use
+            clearExtensionIdFromStorage();
             // Close the tab after successful authentication
             setTimeout(() => {
               window.close();
@@ -93,8 +113,10 @@ function LoginForm({ onError }: LoginFormProps) {
         }
       );
     } catch (error: any) {
-      console.error('NymAI: Error sending session to extension:', error);
-      onError(`Failed to authenticate with extension: ${error.message || 'Unknown error'}`);
+      // SECURITY FIX: Only log error message
+      const errorMessage = error?.message || 'Unknown error';
+      console.error('NymAI: Error sending session to extension:', errorMessage);
+      onError(`Failed to authenticate with extension: ${errorMessage}`);
     }
   };
 
@@ -156,20 +178,34 @@ function LoginForm({ onError }: LoginFormProps) {
     try {
       // Get extension ID from URL params or sessionStorage
       const urlParams = new URLSearchParams(window.location.search);
-      const devExtensionId = urlParams.get('dev_extension_id') || sessionStorage.getItem('nymAI_dev_extension_id');
+      const urlExtensionId = urlParams.get('dev_extension_id');
+      const storedExtensionId = sessionStorage.getItem('nymAI_dev_extension_id');
       
-      if (devExtensionId) {
-        // Save extension ID to sessionStorage for the OAuth redirect
-        sessionStorage.setItem('nymAI_dev_extension_id', devExtensionId);
+      // SECURITY FIX: Validate and sanitize extension ID
+      let devExtensionId: string | null = null;
+      if (urlExtensionId) {
+        devExtensionId = sanitizeExtensionId(urlExtensionId);
+        if (devExtensionId && isValidExtensionId(devExtensionId)) {
+          saveExtensionIdToStorage(devExtensionId);
+        } else {
+          console.warn('NymAI: Invalid extension ID format from URL:', urlExtensionId);
+          devExtensionId = null;
+        }
+      } else if (storedExtensionId) {
+        devExtensionId = isValidExtensionId(storedExtensionId) ? storedExtensionId : null;
       }
 
       // Redirect to main page with OAuth parameters (same as extension does)
-      const url = `https://www.nymai.io?auth_provider=google&dev_extension_id=${devExtensionId || ''}`;
+      // SECURITY FIX: Only include extension ID if it's valid
+      const extensionIdParam = devExtensionId ? `&dev_extension_id=${devExtensionId}` : '';
+      const url = `https://www.nymai.io?auth_provider=google${extensionIdParam}`;
       window.location.href = url;
     } catch (err: any) {
-      console.error('NymAI: Error initiating Google OAuth:', err)
-      onError(`Login failed: ${err.message || 'Unknown error occurred'}`)
-      setLoading(false)
+      // SECURITY FIX: Only log error message
+      const errorMessage = err?.message || 'Unknown error occurred';
+      console.error('NymAI: Error initiating Google OAuth:', errorMessage);
+      onError(`Login failed: ${errorMessage}`);
+      setLoading(false);
     }
   }
 
