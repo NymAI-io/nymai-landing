@@ -41,7 +41,13 @@ const Pricing: React.FC = () => {
           <p className="text-gray-600 mb-6">For casual, everyday use.</p>
           <p className="text-4xl font-extrabold text-gray-900 mb-6">Free</p>
           <ul className="space-y-4 text-gray-700">
-            <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> 10 analyses per day</li>
+            <li className="flex items-start gap-3">
+              <CheckIcon className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+              <span>10 Daily Credits<sup className="text-xs text-gray-500 ml-1">*</sup></span>
+            </li>
+            <li className="text-xs text-gray-500 ml-8 -mt-2">
+              <sup>*</sup>Text & Image = 1 Credit. Video = 5 Credits.
+            </li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Basic AI detection</li>
             <li className="flex items-center gap-3"><CheckIcon className="w-5 h-5 text-green-400" /> Text, Image & <strong>Video</strong> analysis</li>
           </ul>
