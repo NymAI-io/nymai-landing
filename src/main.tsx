@@ -1,7 +1,7 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 
 function initApp() {
   const rootElement = document.getElementById('root');
@@ -25,4 +25,3 @@ if (document.readyState === 'loading') {
   // DOM is already loaded, execute immediately
   initApp();
 }
-

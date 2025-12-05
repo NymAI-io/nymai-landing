@@ -1,30 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import Dashboard from './pages/Dashboard';
 import { isValidExtensionId, sanitizeExtensionId, saveExtensionIdToStorage, clearExtensionIdFromStorage, getExtensionIdFromStorage } from './utils/extensionId';
-
-// Supabase configuration - Uses environment variables with fallback defaults
-// SECURITY: Supabase anon keys are designed to be public (protected by RLS)
-// Using environment variables allows for easier configuration across environments
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rpnprnyoylifxxstdxzg.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_BB5Hs1o7Za_hR00TC23GxA__bFgMKqO';
-
-// Extension ID - This should be set to your actual Chrome extension ID
-// For development, you can find it in chrome://extensions (Developer mode)
-// For production, this should be configured via environment variable or build config
-// NOTE: We check this dynamically each time, not at module load, so it can be set in console
-function getExtensionId(): string | null {
-  return (window as any).NYMAI_EXTENSION_ID || null;
-}
-
-// Initialize Supabase client (using CDN import)
-declare global {
-  interface Window {
-    supabase?: any;
-  }
-}
+import { supabase } from './lib/supabase';
 
 // OAuth Redirect Handler Component (handles OAuth callbacks)
 const OAuthHandler: React.FC = () => {
@@ -38,11 +18,11 @@ const OAuthHandler: React.FC = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const authProvider = urlParams.get('auth_provider');
     const devExtensionId = urlParams.get('dev_extension_id');
-    
+
     // Check URL hash for OAuth redirect indicators (returning from Google)
     const hash = window.location.hash;
     const hasAuthHash = hash.includes('access_token') || hash.includes('code=') || hash.includes('error=');
-    
+
     // Case 1: User is starting the OAuth flow (has auth_provider=google query param)
     if (authProvider === 'google' && devExtensionId) {
       // SECURITY FIX: Validate and sanitize extension ID before saving
@@ -53,68 +33,38 @@ const OAuthHandler: React.FC = () => {
         setErrorMessage('Invalid extension ID format. Please ensure the extension is properly installed.');
         return;
       }
-      
+
       console.log('NymAI: OAuth flow initiated, saving extension ID:', sanitizedId);
-      
+
       // Save the validated extension ID to sessionStorage (persists across redirects)
       saveExtensionIdToStorage(sanitizedId);
-      
+
       // Mark as OAuth redirect so the auth logic will run
       setIsOAuthRedirect(true);
-      
-      // Initiate Google OAuth immediately
-      // Wait for Supabase to be available, then redirect to Google
-      const waitForSupabase = (): Promise<void> => {
-        return new Promise((resolve, reject) => {
-          if ((window as any).supabase && (window as any).supabase.createClient) {
-            resolve();
-            return;
-          }
-          
-          // Wait up to 5 seconds for Supabase to load
-          let attempts = 0;
-          const checkInterval = setInterval(() => {
-            attempts++;
-            if ((window as any).supabase && (window as any).supabase.createClient) {
-              clearInterval(checkInterval);
-              resolve();
-            } else if (attempts > 50) { // 5 seconds max
-              clearInterval(checkInterval);
-              reject(new Error('Supabase library failed to load'));
-            }
-          }, 100);
-        });
-      };
 
-      waitForSupabase().then(() => {
-        const supabaseLib = (window as any).supabase;
-        const { createClient } = supabaseLib;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        console.log('NymAI: Initiating Google OAuth redirect...');
-        // Initiate OAuth - this will redirect to Google
-        supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'https://www.nymai.io'
-          }
-        });
+      console.log('NymAI: Initiating Google OAuth redirect...');
+      // Initiate OAuth - this will redirect to Google
+      supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://www.nymai.io'
+        }
       }).catch((error) => {
-        console.error('NymAI: Failed to load Supabase:', error);
+        console.error('NymAI: Failed to initiate OAuth:', error);
         setAuthStatus('error');
-        setErrorMessage('Failed to load authentication library. Please refresh the page.');
+        setErrorMessage('Failed to initiate authentication. Please refresh the page.');
       });
-      
+
       return; // Exit early - OAuth redirect will happen
     }
-    
+
     // Case 2: User is returning from Google OAuth (has auth hash)
     if (hasAuthHash) {
       console.log('NymAI: Returning from OAuth, checking for saved extension ID...');
       setIsOAuthRedirect(true);
       return; // The existing auth logic will handle this
     }
-    
+
     // Case 3: Normal visitor (no OAuth params, no auth hash)
     setIsOAuthRedirect(false);
   }, []);
@@ -124,104 +74,56 @@ const OAuthHandler: React.FC = () => {
     if (!isOAuthRedirect) {
       return;
     }
-    // Wait for Supabase to be available (loaded from CDN in index.html)
-    const initAuth = async () => {
-      // Wait for Supabase to be available (it's loaded in index.html)
-      const waitForSupabase = (): Promise<void> => {
-        return new Promise((resolve, reject) => {
-          if ((window as any).supabase && (window as any).supabase.createClient) {
-            resolve();
-            return;
-          }
-          
-          // Wait up to 5 seconds for Supabase to load
-          let attempts = 0;
-          const checkInterval = setInterval(() => {
-            attempts++;
-            if ((window as any).supabase && (window as any).supabase.createClient) {
-              clearInterval(checkInterval);
-              resolve();
-            } else if (attempts > 50) { // 5 seconds max
-              clearInterval(checkInterval);
-              reject(new Error('Supabase library failed to load'));
-            }
-          }, 100);
-        });
-      };
-
-      try {
-        await waitForSupabase();
-        setupAuthListener();
-      } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
-        setAuthStatus('error');
-        setErrorMessage('Failed to load authentication library. Please refresh the page.');
-      }
-    };
 
     const setupAuthListener = () => {
-      try {
-        // Access Supabase from global window object (loaded via CDN)
-        const supabaseLib = (window as any).supabase;
-        if (!supabaseLib || !supabaseLib.createClient) {
-          throw new Error('Supabase library not loaded');
+      // Listen for auth state changes
+      supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+        if (event === 'SIGNED_IN' && session) {
+          setAuthStatus('processing');
+
+          // Check if extension exists
+          const extensionId = await checkExtensionExists();
+          if (!extensionId) {
+            setAuthStatus('error');
+            setErrorMessage('NymAI extension not found. Please install the extension first.');
+            return;
+          }
+
+          // Send session to extension
+          console.log('onAuthStateChange: SIGNED_IN event detected');
+          console.log('onAuthStateChange: Extension ID:', extensionId);
+          // SECURITY FIX: Don't log full session object (contains tokens)
+          console.log('onAuthStateChange: Session received (tokens not logged for security)');
+          try {
+            await sendSessionToExtension(extensionId, session);
+            console.log('onAuthStateChange: Session sent successfully');
+            // SECURITY FIX: Clear extension ID from sessionStorage after successful use
+            clearExtensionIdFromStorage();
+            setAuthStatus('success');
+            // Close the tab automatically after successful authentication
+            // Small delay to ensure message is sent before closing
+            setTimeout(() => {
+              console.log('onAuthStateChange: Closing window...');
+              window.close();
+            }, 100);
+          } catch (error: any) {
+            // SECURITY FIX: Don't log full error object (might contain session data)
+            console.error('onAuthStateChange: Failed to send session to extension');
+            const errorMessage = error?.message || 'Please try again.';
+            console.error('onAuthStateChange: Error message:', errorMessage);
+            setAuthStatus('error');
+            setErrorMessage(`Failed to authenticate with extension: ${errorMessage}`);
+            // Don't close on error - user needs to see the error message
+          }
         }
-        const { createClient } = supabaseLib;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      });
 
-        // Listen for auth state changes
-        supabase.auth.onAuthStateChange(async (event: string, session: any) => {
-          if (event === 'SIGNED_IN' && session) {
-            setAuthStatus('processing');
-            
-            // Check if extension exists
-            const extensionId = await checkExtensionExists();
-            if (!extensionId) {
-              setAuthStatus('error');
-              setErrorMessage('NymAI extension not found. Please install the extension first.');
-              return;
-            }
-
-            // Send session to extension
-            console.log('onAuthStateChange: SIGNED_IN event detected');
-            console.log('onAuthStateChange: Extension ID:', extensionId);
-            // SECURITY FIX: Don't log full session object (contains tokens)
-            console.log('onAuthStateChange: Session received (tokens not logged for security)');
-            try {
-              await sendSessionToExtension(extensionId, session);
-              console.log('onAuthStateChange: Session sent successfully');
-              // SECURITY FIX: Clear extension ID from sessionStorage after successful use
-              clearExtensionIdFromStorage();
-              setAuthStatus('success');
-              // Close the tab automatically after successful authentication
-              // Small delay to ensure message is sent before closing
-              setTimeout(() => {
-                console.log('onAuthStateChange: Closing window...');
-                window.close();
-              }, 100);
-            } catch (error: any) {
-              // SECURITY FIX: Don't log full error object (might contain session data)
-              console.error('onAuthStateChange: Failed to send session to extension');
-              const errorMessage = error?.message || 'Please try again.';
-              console.error('onAuthStateChange: Error message:', errorMessage);
-              setAuthStatus('error');
-              setErrorMessage(`Failed to authenticate with extension: ${errorMessage}`);
-              // Don't close on error - user needs to see the error message
-            }
-          }
-        });
-
-        // Also check for existing session in URL hash
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            handleSession(session);
-          }
-        });
-      } catch (error) {
-        console.error('Failed to initialize auth:', error);
-        setAuthStatus('error');
-        setErrorMessage('Failed to initialize authentication.');
-      }
+      // Also check for existing session in URL hash
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          handleSession(session);
+        }
+      });
     };
 
     const checkExtensionExists = (): Promise<string | null> => {
@@ -241,8 +143,9 @@ const OAuthHandler: React.FC = () => {
 
           const checkForExtensionId = () => {
             attempts++;
-            const extensionId = getExtensionId();
-            
+            // Use a simpler way to get extension ID if the function is not available
+            const extensionId = (window as any).NYMAI_EXTENSION_ID || null;
+
             if (extensionId) {
               // Found extension ID, verify it works by pinging the extension
               chrome.runtime.sendMessage(
@@ -351,9 +254,9 @@ const OAuthHandler: React.FC = () => {
       // SECURITY FIX: Don't log full session object (contains tokens)
       console.log('handleSession called');
       setAuthStatus('processing');
-      
+
       const extensionId = await checkExtensionExists();
-      
+
       if (extensionId) {
         try {
           await sendSessionToExtension(extensionId, session);
@@ -382,7 +285,7 @@ const OAuthHandler: React.FC = () => {
       }
     };
 
-    initAuth();
+    setupAuthListener();
   }, [isOAuthRedirect]);
 
   // Show minimal success UI (tab will close automatically)
@@ -463,6 +366,7 @@ const App: React.FC = () => {
       <OAuthHandler />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
@@ -470,4 +374,3 @@ const App: React.FC = () => {
 }
 
 export default App;
-

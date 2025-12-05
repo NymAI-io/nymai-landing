@@ -1,54 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/NymAI_icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NymAI - Clarity in every click.</title>
+    <title>NymAI - The Privacy Firewall for Developers</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@500&display=swap" rel="stylesheet">
-    <!-- SECURITY FIX: Added Subresource Integrity (SRI) and pinned to specific version -->
-    <!-- SRI hash ensures the script hasn't been tampered with -->
-    <!-- Note: Update integrity hash if upgrading Supabase version -->
-    <script 
-      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"
-      integrity="sha384-+exuGmToMCgcfiTDu+P+1aCmlH2Mis7lstkjVmVHdwvJqtNNqhxMreqsIe6bVstn"
-      crossorigin="anonymous">
-    </script>
-    <!-- Configure NymAI Extension ID -->
-    <!-- For production, replace with your actual Chrome extension ID -->
-    <!-- You can find it in chrome://extensions (Developer mode) or from your extension's manifest -->
-    <script>
-      // Set your extension ID here (or via environment variable in production)
-      // Example: window.NYMAI_EXTENSION_ID = 'abcdefghijklmnopqrstuvwxyz123456';
-      // For development, this can be left null and set manually in browser console
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            colors: {
-              'brand-dark': '#2d3748',
-              'brand-teal': '#4fd1c5',
-              'brand-teal-light': '#81e6d9',
-              'background': '#f7fafc',
-              'neutral-text': '#a0aec0',
-              'brand-glass': 'rgba(255, 255, 255, 0.05)',
-              'brand-glass-border': 'rgba(255, 255, 255, 0.1)',
-            },
-          },
-        },
-      }
-    </script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-brand-dark">
+  </head>
+  <body class="bg-zinc-900 text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
