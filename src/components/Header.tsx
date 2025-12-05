@@ -14,15 +14,21 @@ const Header: React.FC = () => {
           <a href="#how-it-works" className="text-zinc-400 hover:text-white transition-colors">How It Works</a>
           <a href="#pricing" className="text-zinc-400 hover:text-white transition-colors">Pricing</a>
         </nav>
-        <a
-          href="#"
-          className="bg-white text-zinc-900 font-semibold py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-zinc-200 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 19.5a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
-          </svg>
-          <span>Download for Chrome</span>
-        </a>
+
+        <div className="flex items-center gap-6">
+          <a href="/login" className="text-zinc-400 hover:text-white font-medium transition-colors">
+            Log In
+          </a>
+          <a
+            href="#"
+            className="bg-white text-zinc-900 font-semibold py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-zinc-200 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 19.5a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
+            </svg>
+            <span>Download for Chrome</span>
+          </a>
+        </div>
       </div>
     </header>
   );

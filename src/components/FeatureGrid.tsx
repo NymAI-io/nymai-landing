@@ -53,7 +53,7 @@ export default function FeatureGrid() {
 
                 <div className="grid md:grid-cols-3 gap-8">
                     {features.map((feature, i) => (
-                        <div key={i} className="bg-zinc-900 border border-zinc-800 p-8 rounded-xl hover:border-zinc-700 transition-colors">
+                        <div key={i} className="bg-zinc-900 border border-zinc-800 p-8 rounded-xl hover:border-amber-500/50 transition-colors duration-300">
                             <div className={`w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center mb-6 ${feature.color}`}>
                                 {feature.icon}
                             </div>
