@@ -1,0 +1,15 @@
+/* NymAI Landing Page Styles */
+
+/* Base styles are handled by Tailwind CSS via CDN */
+/* This file can be used for custom styles if needed */
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
