@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../src/lib/supabase-admin';
+import { supabaseAdmin } from './_lib/supabase-admin.ts';
 import { buffer } from 'micro';
 
 // Disable body parsing, we need the raw body for signature verification
@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 if (userId && subscriptionId) {
                     // Fetch subscription details to get status and price
-                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as unknown as Stripe.Subscription;
 
                     // 1. Update Profile with Billing Customer ID
                     await supabaseAdmin
@@ -56,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         user_id: userId,
                         status: subscription.status,
                         price_id: subscription.items.data[0].price.id,
-                        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
                     });
                 }
                 break;
@@ -72,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         user_id: userId,
                         status: subscription.status,
                         price_id: subscription.items.data[0].price.id,
-                        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
                     });
                 } else {
                     // Fallback: If metadata is missing (legacy?), try finding by customer_id if stored in profiles

@@ -6,6 +6,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // DEBUG LOG
+    console.log("DEBUG: NEXT_PUBLIC_URL is:", process.env.NEXT_PUBLIC_URL);
+    console.log("DEBUG: Webhook Secret starts with:", process.env.STRIPE_WEBHOOK_SECRET?.substring(0, 5));
+
+    console.log('Checkout Request:', req.body);
     if (req.method !== 'POST') {
         res.setHeader('Allow', 'POST');
         return res.status(405).end('Method Not Allowed');

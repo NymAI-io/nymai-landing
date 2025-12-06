@@ -8,13 +8,18 @@ function classNames(...classes: string[]) {
 }
 
 // Placeholder Price IDs - Replace with actual Stripe Price IDs
-const PRICE_PRO = 'price_1Qf...'; // e.g. price_1234
-const PRICE_TEAM = 'price_1Qg...'; // e.g. price_5678
+const PRICE_PRO = 'price_1SbOfmLuhBL6ZKLPnCG2h0Sk'; // e.g. price_1234
+const PRICE_TEAM = 'price_1SbOgDLuhBL6ZKLPm0Fc4ITg'; // e.g. price_5678
+
+// Chrome Extension ID for Auth Sync
+// TODO: Replace with your actual Extension ID given by Chrome (chrome://extensions)
+const EXTENSION_ID = "mabcbancmbiimlahjokigkgiaggfoppb";
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
+    const [session, setSession] = useState<any>(null); // Track full session
     const [profile, setProfile] = useState<any>(null);
     const [subscription, setSubscription] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'billing'>('overview');
@@ -23,6 +28,30 @@ export default function Dashboard() {
     useEffect(() => {
         checkUser();
     }, []);
+
+    // Sync Session with Chrome Extension
+    useEffect(() => {
+        if (session && EXTENSION_ID) {
+            // Check if Chrome runtime is available
+            if (window.chrome && window.chrome.runtime) {
+                try {
+                    console.log('Attempting to sync session with extension:', EXTENSION_ID);
+                    window.chrome.runtime.sendMessage(EXTENSION_ID, {
+                        type: 'AUTH_SYNC',
+                        session: session
+                    }, (response) => {
+                        if (window.chrome.runtime.lastError) {
+                            console.debug('Extension sync failed (expected if not installed):', window.chrome.runtime.lastError);
+                        } else {
+                            console.log('Extension sync successful:', response);
+                        }
+                    });
+                } catch (e) {
+                    console.debug('Extension sync error:', e);
+                }
+            }
+        }
+    }, [session]);
 
     async function checkUser() {
         try {
@@ -33,6 +62,7 @@ export default function Dashboard() {
             }
 
             setUser(session.user);
+            setSession(session);
 
             // Fetch Profile & Subscription
             const [profileRes, subRes] = await Promise.all([
@@ -42,19 +72,6 @@ export default function Dashboard() {
 
             if (profileRes.data) setProfile(profileRes.data);
             if (subRes.data) setSubscription(subRes.data);
-
-            // Silent Sync
-            const extensionId = sessionStorage.getItem('nymAI_dev_extension_id');
-            if (extensionId && window.chrome && window.chrome.runtime) {
-                try {
-                    window.chrome.runtime.sendMessage(extensionId, {
-                        type: 'AUTH_SYNC',
-                        session: session
-                    }, (response) => {
-                        if (window.chrome.runtime.lastError) console.debug('Sync failed:', window.chrome.runtime.lastError);
-                    });
-                } catch (e) { console.debug('Sync error:', e); }
-            }
 
         } catch (error) {
             console.error('Error checking auth:', error);

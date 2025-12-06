@@ -22,10 +22,13 @@ const LoginPage: React.FC = () => {
     try {
       setLoading(true);
       setError("");
+      const redirectTo = `${window.location.origin}/dashboard`;
+      console.log('Starting OAuth flow with redirect:', redirectTo);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo,
         },
       });
       if (error) throw error;

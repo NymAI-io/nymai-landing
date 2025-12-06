@@ -1,6 +1,9 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|_next/|static/|public/|.*\\..*|@).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
@@ -34,4 +37,3 @@
     }
   ]
 }
-

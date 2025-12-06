@@ -21,6 +21,7 @@
     "@types/micro": "^7.3.7",
     "@types/node": "^22.14.0",
     "@types/stripe": "^8.0.416",
+    "@vercel/node": "^5.5.15",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.22",
     "postcss": "^8.5.6",
