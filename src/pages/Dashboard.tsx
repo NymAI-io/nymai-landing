@@ -16,9 +16,33 @@ export default function Dashboard() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 navigate('/login');
-            } else {
-                setUser(session.user);
+                return;
             }
+
+            setUser(session.user);
+
+            // Silent Sync: Try to send session to extension if ID is available
+            // This does NOT block the UI if it fails
+            const extensionId = sessionStorage.getItem('nymAI_dev_extension_id');
+            if (extensionId && window.chrome && window.chrome.runtime) {
+                try {
+                    window.chrome.runtime.sendMessage(extensionId, {
+                        type: 'AUTH_SYNC',
+                        session: session
+                    }, (response) => {
+                        if (window.chrome.runtime.lastError) {
+                            // Ignore error, extension might not be listening or installed
+                            console.debug('Extension sync failed (silent):', window.chrome.runtime.lastError);
+                        } else {
+                            console.log('Extension sync successful:', response);
+                        }
+                    });
+                } catch (e) {
+                    // Ignore any other errors
+                    console.debug('Extension sync error (silent):', e);
+                }
+            }
+
         } catch (error) {
             console.error('Error checking auth:', error);
             navigate('/login');
@@ -35,7 +59,10 @@ export default function Dashboard() {
     if (loading) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">
-                Loading...
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p>Loading Dashboard...</p>
+                </div>
             </div>
         );
     }
@@ -43,7 +70,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-zinc-950 flex font-sans text-zinc-100">
             {/* Sidebar */}
-            <aside className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-6 flex flex-col">
+            <aside className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-6 flex flex-col hidden md:flex">
                 <div className="flex items-center gap-2 mb-8">
                     <span className="text-xl font-bold text-white tracking-tight">NymAI</span>
                     <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-xs font-medium border border-amber-500/20">
@@ -93,9 +120,14 @@ export default function Dashboard() {
 
             {/* Main Content */}
             <main className="flex-1 p-8">
-                <header className="mb-8">
-                    <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>
-                    <p className="text-zinc-400">Manage your NymAI settings and integrations.</p>
+                <header className="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>
+                        <p className="text-zinc-400">Manage your NymAI settings and integrations.</p>
+                    </div>
+                    <button onClick={handleSignOut} className="md:hidden text-zinc-400 hover:text-white">
+                        Sign Out
+                    </button>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   // Save extension ID from URL query params to sessionStorage
@@ -15,9 +18,10 @@ const LoginPage: React.FC = () => {
     }
   }, []);
 
-  const handleLogin = async (provider: 'google' | 'github') => {
+  const handleOAuthLogin = async (provider: 'google' | 'github') => {
     try {
       setLoading(true);
+      setError("");
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -25,6 +29,43 @@ const LoginPage: React.FC = () => {
         },
       });
       if (error) throw error;
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      setError("");
+      setMessage("");
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      // Redirect handled by auth state change listener or dashboard protection
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSignUp = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setMessage("");
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) throw error;
+      setMessage("Check your email for the confirmation link!");
+      setLoading(false);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -45,10 +86,67 @@ const LoginPage: React.FC = () => {
               {error}
             </div>
           )}
+          {message && (
+            <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-sm text-green-400">
+              {message}
+            </div>
+          )}
+
+          <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-1">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-white focus:outline-none focus:border-amber-500 transition-colors"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-1">Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-white focus:outline-none focus:border-amber-500 transition-colors"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-500 transition-colors disabled:opacity-50"
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={handleEmailSignUp}
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-zinc-800 text-white rounded-lg font-semibold hover:bg-zinc-700 transition-colors disabled:opacity-50"
+              >
+                Sign Up
+              </button>
+            </div>
+          </form>
+
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-800"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-zinc-900 text-zinc-500">Or continue with</span>
+            </div>
+          </div>
 
           <div className="space-y-4">
             <button
-              onClick={() => handleLogin('google')}
+              onClick={() => handleOAuthLogin('google')}
               disabled={loading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-zinc-900 rounded-lg font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -74,7 +172,7 @@ const LoginPage: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleLogin('github')}
+              onClick={() => handleOAuthLogin('github')}
               disabled={loading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-zinc-800 text-white rounded-lg font-semibold border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
