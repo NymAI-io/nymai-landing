@@ -28,6 +28,11 @@ export default function Dashboard() {
     const [countdown, setCountdown] = useState(5);
     const [targetExtensionId, setTargetExtensionId] = useState<string>(DEFAULT_EXTENSION_ID);
 
+    // Custom Rules State
+    const [rules, setRules] = useState<any[]>([]);
+    const [newRule, setNewRule] = useState({ name: '', pattern: '' });
+    const [ruleError, setRuleError] = useState('');
+
     useEffect(() => {
         checkUser();
 
@@ -63,6 +68,26 @@ export default function Dashboard() {
         return () => window.removeEventListener('NYMAI_EXTENSION_ID_READY', handleExtensionReady);
 
     }, [searchParams]);
+
+    // Fetch Rules when entering Settings tab
+    useEffect(() => {
+        if (activeTab === 'settings' && user) {
+            fetchRules();
+        }
+    }, [activeTab, user]);
+
+    async function fetchRules() {
+        const { data, error } = await supabase
+            .from('custom_rules')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching rules:', error);
+        } else if (data) {
+            setRules(data);
+        }
+    }
 
     // Sync Session with Chrome Extension
     useEffect(() => {
@@ -203,6 +228,56 @@ export default function Dashboard() {
         navigate('/login');
     }
 
+    // Custom Rules Handlers
+    async function handleAddRule() {
+        // Tier Check
+        const isFree = planName === 'Free';
+        if (isFree) {
+            alert("Upgrade to Pro to add custom rules.");
+            return;
+        }
+
+        // Validation
+        if (!newRule.name || !newRule.pattern) {
+            setRuleError("Name and Pattern are required.");
+            return;
+        }
+
+        try {
+            new RegExp(newRule.pattern);
+        } catch (e) {
+            setRuleError("Invalid Regex Pattern.");
+            return;
+        }
+        setRuleError('');
+        setProcessing(true);
+
+        const { error } = await supabase.from('custom_rules').insert([
+            { user_id: user.id, name: newRule.name, regex_pattern: newRule.pattern }
+        ]);
+
+        if (error) {
+            console.error('Error adding rule:', error);
+            setRuleError('Failed to save rule.');
+        } else {
+            setNewRule({ name: '', pattern: '' });
+            fetchRules();
+        }
+        setProcessing(false);
+    }
+
+    async function handleDeleteRule(id: string) {
+        if (!confirm('Are you sure you want to delete this rule?')) return;
+
+        const { error } = await supabase.from('custom_rules').delete().eq('id', id);
+        if (error) {
+            console.error('Error deleting rule:', error);
+            alert('Failed to delete rule.');
+        } else {
+            setRules(rules.filter(r => r.id !== id));
+        }
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">
@@ -218,6 +293,9 @@ export default function Dashboard() {
     const planName = subscription?.status === 'active' || subscription?.status === 'trialing'
         ? 'Pro' // Simplified logic: if stored price_id matches team, display Team
         : 'Free';
+
+    // UI Helpers for Settings
+    const isFreeTier = planName === 'Free';
 
     return (
         <div className="min-h-screen bg-zinc-950 flex font-sans text-zinc-100">
@@ -418,10 +496,105 @@ export default function Dashboard() {
                             </div>
                         )}
 
-                        {/* Placeholder for settings tab content */}
+                        {/* Settings Content for CUSTOM RULES */}
                         {activeTab === 'settings' && (
-                            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center text-zinc-500">
-                                Settings content coming soon.
+                            <div className="max-w-4xl space-y-6">
+                                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
+                                    {/* Header */}
+                                    <div className="mb-6">
+                                        <h2 className="text-xl font-bold text-white">Custom Redaction Rules</h2>
+                                        <p className="text-zinc-400 text-sm">Define custom regex patterns to be redacted automatically.</p>
+                                    </div>
+
+                                    {/* Free Tier Overlay */}
+                                    {isFreeTier && (
+                                        <div className="absolute inset-0 bg-zinc-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+                                            <div className="p-3 bg-zinc-800 rounded-full mb-3 shadow-lg border border-zinc-700">
+                                                <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                </svg>
+                                            </div>
+                                            <h3 className="text-lg font-bold text-white mb-1">Pro Feature</h3>
+                                            <p className="text-zinc-400 text-sm max-w-xs mb-4">Upgrade to Pro to create unlimited custom redaction rules.</p>
+                                            <button
+                                                onClick={() => setActiveTab('billing')}
+                                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-lg transition-colors"
+                                            >
+                                                View Plans
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Rules List */}
+                                    <div className="space-y-3 mb-8">
+                                        {rules.length === 0 ? (
+                                            <div className="text-center py-8 border border-dashed border-zinc-800 rounded-lg">
+                                                <p className="text-zinc-500 text-sm">No custom rules yet.</p>
+                                            </div>
+                                        ) : (
+                                            rules.map((rule) => (
+                                                <div key={rule.id} className="flex items-center justify-between bg-zinc-950/50 border border-zinc-800/50 p-3 rounded-lg group hover:border-zinc-700 transition-colors">
+                                                    <div>
+                                                        <h4 className="font-medium text-zinc-200 text-sm">{rule.name}</h4>
+                                                        <code className="text-xs text-amber-500 font-mono mt-0.5 block">{rule.regex_pattern}</code>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDeleteRule(rule.id)}
+                                                        className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                                                        disabled={isFreeTier || processing}
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    {/* Add Rule Form */}
+                                    <div className="pt-6 border-t border-zinc-800">
+                                        <h3 className="text-sm font-medium text-white mb-4">Add New Rule</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Rule Name</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Project IDs"
+                                                    value={newRule.name}
+                                                    onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
+                                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors placeholder:text-zinc-600"
+                                                    disabled={isFreeTier || processing}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Regex Pattern</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. PROJ-\d{4}"
+                                                    value={newRule.pattern}
+                                                    onChange={(e) => setNewRule({ ...newRule, pattern: e.target.value })}
+                                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-amber-500 transition-colors placeholder:text-zinc-600"
+                                                    disabled={isFreeTier || processing}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {ruleError && (
+                                            <p className="text-red-400 text-xs mb-3">{ruleError}</p>
+                                        )}
+
+                                        <div className="flex justify-end">
+                                            <button
+                                                onClick={handleAddRule}
+                                                disabled={isFreeTier || processing}
+                                                className="px-4 py-2 bg-white text-zinc-950 font-medium text-sm rounded-lg hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            >
+                                                {processing ? 'Saving...' : 'Add Rule'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
