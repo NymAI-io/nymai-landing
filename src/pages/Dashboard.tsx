@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 // Helper for class names
@@ -11,12 +11,12 @@ function classNames(...classes: string[]) {
 const PRICE_PRO = 'price_1SbOfmLuhBL6ZKLPnCG2h0Sk'; // e.g. price_1234
 const PRICE_TEAM = 'price_1SbOgDLuhBL6ZKLPm0Fc4ITg'; // e.g. price_5678
 
-// Chrome Extension ID for Auth Sync
-// TODO: Replace with your actual Extension ID given by Chrome (chrome://extensions)
-const EXTENSION_ID = "mabcbancmbiimlahjokigkgiaggfoppb";
+// Default/Fallback Extension ID
+const DEFAULT_EXTENSION_ID = "mabcbancmbiimlahjokigkgiaggfoppb";
 
 export default function Dashboard() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [session, setSession] = useState<any>(null); // Track full session
@@ -24,26 +24,77 @@ export default function Dashboard() {
     const [subscription, setSubscription] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'billing'>('overview');
     const [processing, setProcessing] = useState(false);
+    const [showSuccessSplash, setShowSuccessSplash] = useState(false);
+    const [countdown, setCountdown] = useState(5);
+    const [targetExtensionId, setTargetExtensionId] = useState<string>(DEFAULT_EXTENSION_ID);
 
     useEffect(() => {
         checkUser();
-    }, []);
+
+        // 1. Resolve Extension ID from URL or LocalStorage or INJECTED GLOBAL
+        const urlExtId = searchParams.get('ext_id');
+        const storedExtId = localStorage.getItem('nym_extension_id');
+        // @ts-ignore
+        const injectedExtId = window.NYMAI_EXTENSION_ID;
+
+        if (urlExtId) {
+            console.log("Setting Extension ID from URL:", urlExtId);
+            setTargetExtensionId(urlExtId);
+            localStorage.setItem('nym_extension_id', urlExtId);
+        } else if (injectedExtId) {
+            console.log("Setting Extension ID from Injected Script:", injectedExtId);
+            setTargetExtensionId(injectedExtId);
+            localStorage.setItem('nym_extension_id', injectedExtId);
+        } else if (storedExtId) {
+            console.log("Using stored Extension ID:", storedExtId);
+            setTargetExtensionId(storedExtId);
+        }
+
+        // Listener for dynamic injection (if script loads later)
+        const handleExtensionReady = (e: any) => {
+            const id = e.detail?.id;
+            if (id) {
+                console.log("Extension ID received via event:", id);
+                setTargetExtensionId(id);
+                localStorage.setItem('nym_extension_id', id);
+            }
+        };
+        window.addEventListener('NYMAI_EXTENSION_ID_READY', handleExtensionReady);
+        return () => window.removeEventListener('NYMAI_EXTENSION_ID_READY', handleExtensionReady);
+
+    }, [searchParams]);
 
     // Sync Session with Chrome Extension
     useEffect(() => {
-        if (session && EXTENSION_ID) {
-            // Check if Chrome runtime is available
+        const shouldForceSync = searchParams.get('force_sync') === 'true';
+
+        // Only sync if we have a session and a target ID
+        // Trigger if session exists OR if targetExtensionId just updated (and we have session)
+        if (session && targetExtensionId) {
             if (window.chrome && window.chrome.runtime) {
                 try {
-                    console.log('Attempting to sync session with extension:', EXTENSION_ID);
-                    window.chrome.runtime.sendMessage(EXTENSION_ID, {
+                    // console.log('Attempting to sync session with extension:', targetExtensionId, shouldForceSync ? '(Forced)' : '');
+
+                    window.chrome.runtime.sendMessage(targetExtensionId, {
                         type: 'AUTH_SYNC',
                         session: session
                     }, (response) => {
+                        // Check for runtime error
                         if (window.chrome.runtime.lastError) {
-                            console.debug('Extension sync failed (expected if not installed):', window.chrome.runtime.lastError);
+                            // Silent fail initially
+                            // console.debug('Extension sync failed:', window.chrome.runtime.lastError.message);
                         } else {
                             console.log('Extension sync successful:', response);
+                            setShowSuccessSplash(true);
+                            setCountdown(5);
+
+                            // Clean up URL if forced
+                            if (shouldForceSync || searchParams.get('ext_id')) {
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.delete('force_sync');
+                                newParams.delete('ext_id');
+                                setSearchParams(newParams);
+                            }
                         }
                     });
                 } catch (e) {
@@ -51,7 +102,19 @@ export default function Dashboard() {
                 }
             }
         }
-    }, [session]);
+    }, [session, targetExtensionId, searchParams, setSearchParams]);
+
+    // Splash Screen Timer
+    useEffect(() => {
+        if (showSuccessSplash && countdown > 0) {
+            const timer = setInterval(() => {
+                setCountdown((prev) => prev - 1);
+            }, 1000);
+            return () => clearInterval(timer);
+        } else if (showSuccessSplash && countdown === 0) {
+            setShowSuccessSplash(false);
+        }
+    }, [showSuccessSplash, countdown]);
 
     async function checkUser() {
         try {
@@ -158,6 +221,35 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-zinc-950 flex font-sans text-zinc-100">
+            {/* Success Splash Screen */}
+            {showSuccessSplash && (
+                <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center animate-in fade-in duration-300">
+                    <div className="flex flex-col items-center gap-6 text-center p-8 max-w-md">
+                        {/* Animated Checkmark */}
+                        <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mb-4 animate-in zoom-in duration-500">
+                            <svg className="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Extension Connected Successfully</h1>
+                            <p className="text-zinc-400 text-lg">Your browser is now protected.<br />You can safely close this tab.</p>
+                        </div>
+
+                        <div className="mt-8 flex flex-col gap-4 w-full">
+                            <p className="text-zinc-500 text-sm font-medium">Redirecting to Dashboard in {countdown}s...</p>
+                            <button
+                                onClick={() => setShowSuccessSplash(false)}
+                                className="w-full py-3 px-4 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-800 hover:text-white transition-colors font-medium"
+                            >
+                                Go to Dashboard Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Sidebar */}
             <aside className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-6 flex flex-col hidden md:flex">
                 <div className="flex items-center gap-2 mb-8">
@@ -226,6 +318,7 @@ export default function Dashboard() {
                         Sign Out
                     </button>
                 </header>
+
 
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (

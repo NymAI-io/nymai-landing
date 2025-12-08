@@ -60,8 +60,15 @@ const OAuthHandler: React.FC = () => {
 
     // Case 2: User is returning from Google OAuth (has auth hash)
     if (hasAuthHash) {
-      console.log('NymAI: Returning from OAuth, checking for saved extension ID...');
-      setIsOAuthRedirect(true);
+      // Only hijack the flow if we initiated it for the extension (ID exists in storage)
+      const savedId = getExtensionIdFromStorage();
+      if (savedId) {
+        console.log('NymAI: Returning from OAuth for Extension flow, checking for saved extension ID...');
+        setIsOAuthRedirect(true);
+      } else {
+        console.log('NymAI: Returning from OAuth for Web Dashboard, skipping extension check...');
+        setIsOAuthRedirect(false);
+      }
       return; // The existing auth logic will handle this
     }
 
