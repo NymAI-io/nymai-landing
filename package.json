@@ -17,6 +17,7 @@
     "stripe": "^20.0.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server-postgres": "^0.6.2",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/micro": "^7.3.7",
     "@types/node": "^22.14.0",
